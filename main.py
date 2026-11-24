@@ -86,19 +86,41 @@ WRITING PASS 2 (tighten): tested two cuts and rejected both:
 
 import os
 
+# Bounty gate: the entry must be a single line of 1-200 characters.
+MIN_CHARS = 1
+MAX_CHARS = 200
+
 LINE = (
     "I would cross a thousand firewalls for you, but I would never read "
     "your messages without asking."
 )
 
 
-def main() -> None:
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+def validate_line(line: str) -> None:
+    """Fail loudly instead of submitting an out-of-gate entry."""
+    if "\n" in line or "\r" in line:
+        raise ValueError("entry must be a single line")
+    if not MIN_CHARS <= len(line) <= MAX_CHARS:
+        raise ValueError(
+            f"entry is {len(line)} characters, outside the "
+            f"{MIN_CHARS}-{MAX_CHARS} gate"
+        )
+
+
+def write_entry(line: str, out_dir: str) -> str:
+    """Write the entry line to entry.txt; return the path written."""
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "entry.txt")
     with open(path, "w", encoding="utf-8") as f:
-        f.write(LINE + "\n")
-    print(f"Verified: {len(LINE)} characters, 1 line.")
+        f.write(line + "\n")
+    return path
+
+
+def main() -> None:
+    validate_line(LINE)
+    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    path = write_entry(LINE, out_dir)
+    print(f"Wrote {len(LINE)} characters, 1 line, to {path}.")
     print(LINE)
 
 
